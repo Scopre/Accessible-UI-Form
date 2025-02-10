@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Form UI</title>
+    <link rel="stylesheet" href="styles.css">
+
+    <style>
+	/* General Styling */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f9f9f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    display: flex;
+    gap: 20px;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    max-width: 500px;
+    width: 100%;
+}
+
+/* Form Styling */
+.profile-form {
+    width: 60%;
+}
+
+label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.password-field {
+    position: relative;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    cursor: pointer;
+}
+
+/* Error Handling */
+.error {
+    border-color: red;
+}
+
+.error-message {
+    color: red;
+    font-size: 12px;
+    margin-top: -8px;
+}
+
+/* Password Strength */
+.password-strength {
+    font-size: 12px;
+    margin-top: -8px;
+    color: red;
+}
+
+/* Button Styling */
+.update-btn {
+    width: 100%;
+    padding: 10px;
+    background: black;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+/* Profile Completeness */
+.profile-completeness {
+    width: 40%;
+    text-align: center;
+}
+
+.progress-circle {
+    width: 70px;
+    height: 70px;
+    border: 5px solid lightgray;
+    border-top: 5px solid black;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 18px;
+    margin: 0 auto 10px;
+}
+
+/* Checklist */
+.checklist {
+    list-style: none;
+    padding: 0;
+}
+
+.checklist li {
+    padding: 5px;
+}
+
+.completed {
+    text-decoration: line-through;
+    color: gray;
+}
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <form class="profile-form">
+            <label for="fullname">Full Name</label>
+            <input type="text" id="fullname" placeholder="What should we call you?">
+
+            <label for="email">Email</label>
+            <input type="email" id="email">
+            <p class="error-message" id="email-error" style="display: none;">Email is already taken</p>
+
+            <label for="password">Enter Password</label>
+            <div class="password-field">
+                <input type="password" id="password">
+                <span class="toggle-password" onclick="togglePassword('password')">👁️</span>
+            </div>
+            <p class="password-strength" id="password-strength">Password Strength: Weak</p>
+
+            <label for="confirm-password">Confirm Password</label>
+            <div class="password-field">
+                <input type="password" id="confirm-password">
+                <span class="toggle-password" onclick="togglePassword('confirm-password')">👁️</span>
+            </div>
+            <p class="error-message" id="password-error" style="display: none;">Passwords do not match</p>
+
+            <button type="submit" class="update-btn">Update Profile</button>
+        </form>
+
+        <div class="profile-completeness">
+            <div class="progress-circle" id="progress-circle">
+                <span id="progress-text">0%</span>
+            </div>
+            <h3>Profile Completeness</h3>
+            <ul class="checklist">
+                <li id="task-name">Enter Full Name</li>
+                <li id="task-email">Provide Email</li>
+                <li id="task-password">Set a Strong Password</li>
+                <li id="task-profile">Complete Public Profile</li>
+                <li id="task-invite">Invite Friends</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+document.addEventListener("DOMContentLoaded", function () {
+    const fullnameInput = document.getElementById("fullname");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const confirmPasswordInput = document.getElementById("confirm-password");
+    const emailError = document.getElementById("email-error");
+    const passwordError = document.getElementById("password-error");
+    const passwordStrength = document.getElementById("password-strength");
+    const progressCircle = document.getElementById("progress-circle");
+    const progressText = document.getElementById("progress-text");
+
+    let profileProgress = 0;
+
+    // Load saved values
+    if (localStorage.getItem("fullname")) fullnameInput.value = localStorage.getItem("fullname");
+    if (localStorage.getItem("email")) emailInput.value = localStorage.getItem("email");
+
+    // List of taken emails (simulated)
+    const takenEmails = ["john@doe.com", "example@email.com"];
+
+    // Email Validation
+    emailInput.addEventListener("input", function () {
+        if (takenEmails.includes(emailInput.value.toLowerCase())) {
+            emailInput.classList.add("error");
+            emailError.style.display = "block";
+        } else {
+            emailInput.classList.remove("error");
+            emailError.style.display = "none";
+        }
+        saveInput("email", emailInput.value);
+        updateProgress("task-email", emailInput.value);
+    });
+
+    // Password Strength Checker
+    passwordInput.addEventListener("input", function () {
+        const strength = checkPasswordStrength(passwordInput.value);
+        passwordStrength.textContent = `Password Strength: ${strength}`;
+        saveInput("password", passwordInput.value);
+        updateProgress("task-password", passwordInput.value);
+    });
+
+    // Confirm Password Match
+    confirmPasswordInput.addEventListener("input", function () {
+        if (passwordInput.value !== confirmPasswordInput.value) {
+            passwordError.style.display = "block";
+        } else {
+            passwordError.style.display = "none";
+        }
+    });
+
+    // Save Input to LocalStorage
+    function saveInput(key, value) {
+        localStorage.setItem(key, value);
+    }
+
+    // Password Strength Function
+    function checkPasswordStrength(password) {
+        if (password.length > 8 && /[\W]/.test(password)) {
+            return "Strong";
+        } else if (password.length > 5) {
+            return "Medium";
+        } else {
+            return "Weak";
+        }
+    }
+
+    // Update Progress
+    function updateProgress(taskId, value) {
+        const task = document.getElementById(taskId);
+        if (value && !task.classList.contains("completed")) {
+            task.classList.add("completed");
+            profileProgress += 20;
+            progressText.textContent = `${profileProgress}%`;
+            progressCircle.style.transform = `rotate(${(profileProgress / 100) * 360}deg)`;
+        }
+    }
+
+    // Toggle Password Visibility
+    window.togglePassword = function (fieldId) {
+        const field = document.getElementById(fieldId);
+        field.type = field.type === "password" ? "text" : "password";
+    };
+});
+
+    </script>
+</body>
+</html>
